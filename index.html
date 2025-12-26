@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RGB Permutation Filter</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; line-height: 1.4; }
+    .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+    .panel { border: 1px solid #ddd; border-radius: 12px; padding: 16px; max-width: 520px; }
+    canvas, img { max-width: 100%; height: auto; border-radius: 10px; border: 1px solid #eee; }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+    .hint { color: #555; font-size: 14px; }
+    .error { color: #b00020; font-size: 14px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+    button, a.btn {
+      display: inline-block; padding: 10px 14px; border-radius: 10px;
+      border: 1px solid #ccc; background: #fafafa; cursor: pointer; text-decoration: none; color: inherit;
+    }
+    button:disabled, a.btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>RGB Permutation Filter</h1>
+  <p class="hint">
+    Upload an image. Each RGB value (0–255) is mapped through a fixed permutation and the result can be downloaded.
+    Everything runs in your browser.
+  </p>
+
+  <div class="panel">
+    <div class="controls">
+      <input id="fileInput" type="file" accept="image/*" />
+      <button id="processBtn" disabled>Process</button>
+      <a id="downloadLink" class="btn" aria-disabled="true">Download result</a>
+    </div>
+    <div class="hint mono" id="permInfo"></div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <div class="row" style="margin-top:16px;">
+    <div class="panel">
+      <h3>Original</h3>
+      <img id="originalPreview" alt="Original preview" />
+    </div>
+    <div class="panel">
+      <h3>Result</h3>
+      <canvas id="outCanvas"></canvas>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
