@@ -64,13 +64,6 @@ function setDownloadDisabled(disabled) {
   }
 }
 
-// Show a tiny proof that the permutation is fixed.
-(function initPermInfo() {
-  const previewPairs = [];
-  for (let i = 0; i < 16; i++) previewPairs.push(`${i}→${PERM[i]}`);
-  permInfo.textContent = `Fixed permutation seed: 0x${PERM_SEED.toString(16)} | sample: ${previewPairs.join(", ")} ...`;
-})();
-
 fileInput.addEventListener("change", () => {
   setError("");
   setDownloadDisabled(true);
@@ -155,7 +148,7 @@ processBtn.addEventListener("click", async () => {
 
     lastDownloadUrl = URL.createObjectURL(blob);
     downloadLink.href = lastDownloadUrl;
-    downloadLink.download = "permuted.png";
+    downloadLink.download = "encrypted.png";
     setDownloadDisabled(false);
   } catch (e) {
     setError(e?.message || String(e));
