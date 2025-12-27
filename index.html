@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Image Encryptor</title>
+  <title>RGB Permutation Filter</title>
   <style>
     body { font-family: system-ui, Arial, sans-serif; margin: 24px; line-height: 1.4; }
     .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
@@ -21,16 +21,16 @@
   </style>
 </head>
 <body>
-  <h1>Image Encrypter</h1>
+  <h1>RGB Permutation Filter</h1>
   <p class="hint">
-    Upload an image, and then click "Encrypt" to have it safely encrypted to protect your identity.
-    Everything runs in your browser and there is no AI involved.
+    Upload an image. Each RGB value (0–255) is mapped through a fixed permutation and the result can be downloaded.
+    Everything runs in your browser.
   </p>
 
   <div class="panel">
     <div class="controls">
       <input id="fileInput" type="file" accept="image/*" />
-      <button id="processBtn" disabled>Encrypt</button>
+      <button id="processBtn" disabled>Process</button>
       <a id="downloadLink" class="btn" aria-disabled="true">Download result</a>
     </div>
     <div class="hint mono" id="permInfo"></div>
