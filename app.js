@@ -4,7 +4,7 @@
 // Keep this seed constant forever. Changing it changes the permutation.
 const PERM_SEED = 0xC0FFEE; // pick any 32-bit integer you like, but DON'T change it later
 
-// Deterministic PRNG (Mulberry32)
+// Deterministic PRNG (Mulberry32): small, fast, stable for this use.
 function mulberry32(seed) {
   let t = seed >>> 0;
   return function () {
@@ -28,6 +28,7 @@ function makePermutation(seed) {
     arr[j] = tmp;
   }
 
+  // Convert to Uint8Array for fast indexing
   const perm = new Uint8Array(256);
   for (let i = 0; i < 256; i++) perm[i] = arr[i] & 0xff;
   return perm;
@@ -39,20 +40,18 @@ const PERM = makePermutation(PERM_SEED);
 // 2) UI + IMAGE PROCESSING
 // ---------------------------
 const fileInput = document.getElementById("fileInput");
+const processBtn = document.getElementById("processBtn");
 const downloadLink = document.getElementById("downloadLink");
+const originalPreview = document.getElementById("originalPreview");
 const outCanvas = document.getElementById("outCanvas");
 const permInfo = document.getElementById("permInfo");
-const statusEl = document.getElementById("status");
 const errorEl = document.getElementById("error");
 
+let loadedFile = null;
 let lastDownloadUrl = null;
 
 function setError(msg) {
   errorEl.textContent = msg || "";
-}
-
-function setStatus(msg) {
-  statusEl.textContent = msg || "";
 }
 
 function setDownloadDisabled(disabled) {
@@ -65,25 +64,43 @@ function setDownloadDisabled(disabled) {
   }
 }
 
-// Show a tiny proof that the permutation is fixed.
-(function initPermInfo() {
-  const previewPairs = [];
-  for (let i = 0; i < 16; i++) previewPairs.push(`${i}→${PERM[i]}`);
-  permInfo.textContent =
-    `Fixed permutation seed: 0x${PERM_SEED.toString(16)} | sample: ${previewPairs.join(", ")} ...`;
-})();
+fileInput.addEventListener("change", () => {
+  setError("");
+  setDownloadDisabled(true);
+  processBtn.disabled = true;
+
+  const f = fileInput.files && fileInput.files[0];
+  if (!f) {
+    loadedFile = null;
+    originalPreview.removeAttribute("src");
+    return;
+  }
+  if (!f.type.startsWith("image/")) {
+    setError("Please choose an image file.");
+    loadedFile = null;
+    return;
+  }
+
+  loadedFile = f;
+  const url = URL.createObjectURL(f);
+  originalPreview.src = url;
+  processBtn.disabled = false;
+});
 
 // Loads image into a bitmap with EXIF orientation when available
 async function fileToImageBitmap(file) {
+  // createImageBitmap supports orientation in most modern browsers
   try {
     return await createImageBitmap(file, { imageOrientation: "from-image" });
   } catch {
+    // Fallback: use <img>
     const img = document.createElement("img");
     const url = URL.createObjectURL(file);
     img.src = url;
     await img.decode();
     URL.revokeObjectURL(url);
 
+    // Draw to canvas then create bitmap
     const c = document.createElement("canvas");
     c.width = img.naturalWidth;
     c.height = img.naturalHeight;
@@ -92,63 +109,48 @@ async function fileToImageBitmap(file) {
   }
 }
 
-async function processFile(file) {
+processBtn.addEventListener("click", async () => {
   setError("");
-  setStatus("Processing...");
   setDownloadDisabled(true);
 
-  // Clean up old download URL
+  if (!loadedFile) return;
+
+  // Clean up old download object URL
   if (lastDownloadUrl) {
     URL.revokeObjectURL(lastDownloadUrl);
     lastDownloadUrl = null;
   }
 
-  const bmp = await fileToImageBitmap(file);
-
-  outCanvas.width = bmp.width;
-  outCanvas.height = bmp.height;
-
-  const ctx = outCanvas.getContext("2d", { willReadFrequently: true });
-  ctx.drawImage(bmp, 0, 0);
-
-  const imgData = ctx.getImageData(0, 0, outCanvas.width, outCanvas.height);
-  const data = imgData.data; // [R,G,B,A,...]
-
-  // Apply permutation to R,G,B; leave A unchanged.
-  for (let i = 0; i < data.length; i += 4) {
-    data[i]     = PERM[data[i]];     // R
-    data[i + 1] = PERM[data[i + 1]]; // G
-    data[i + 2] = PERM[data[i + 2]]; // B
-  }
-
-  ctx.putImageData(imgData, 0, 0);
-
-  // Create downloadable file
-  const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
-  if (!blob) throw new Error("Could not export image.");
-
-  lastDownloadUrl = URL.createObjectURL(blob);
-  downloadLink.href = lastDownloadUrl;
-  downloadLink.download = "permuted.png";
-  setDownloadDisabled(false);
-
-  setStatus(`Done. ${bmp.width}×${bmp.height} — ready to download.`);
-}
-
-fileInput.addEventListener("change", async () => {
-  const f = fileInput.files && fileInput.files[0];
-  if (!f) return;
-
-  if (!f.type.startsWith("image/")) {
-    setError("Please choose an image file.");
-    setStatus("");
-    return;
-  }
-
   try {
-    await processFile(f);
+    const bmp = await fileToImageBitmap(loadedFile);
+
+    outCanvas.width = bmp.width;
+    outCanvas.height = bmp.height;
+
+    const ctx = outCanvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0);
+
+    const imgData = ctx.getImageData(0, 0, outCanvas.width, outCanvas.height);
+    const data = imgData.data; // Uint8ClampedArray: [R,G,B,A,...]
+
+    // Apply permutation to R,G,B; leave A unchanged.
+    for (let i = 0; i < data.length; i += 4) {
+      data[i]     = PERM[data[i]];     // R
+      data[i + 1] = PERM[data[i + 1]]; // G
+      data[i + 2] = PERM[data[i + 2]]; // B
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+
+    // Create downloadable file
+    const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not export image.");
+
+    lastDownloadUrl = URL.createObjectURL(blob);
+    downloadLink.href = lastDownloadUrl;
+    downloadLink.download = "encrypted.png";
+    setDownloadDisabled(false);
   } catch (e) {
     setError(e?.message || String(e));
-    setStatus("");
   }
 });
