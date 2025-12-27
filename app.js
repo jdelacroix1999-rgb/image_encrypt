@@ -50,8 +50,18 @@ let loadedFile = null;
 let lastDownloadUrl = null;
 
 function isMobileDevice() {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent || "";
+
+  const isIpad =
+    /iPad/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS pretending to be Mac
+
+  const isIphone = /iPhone|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  return isIpad || isIphone || isAndroid;
 }
+
 
 function enableDownloadOrShare(blob, filename = "permuted.png") {
   // Revoke any previous URL
@@ -77,8 +87,7 @@ function enableDownloadOrShare(blob, filename = "permuted.png") {
 
     const canShareFiles =
       typeof navigator.share === "function" &&
-      typeof navigator.canShare === "function" &&
-      navigator.canShare({ files: [file] });
+      (!navigator.canShare || navigator.canShare({ files: [file] }));
 
     if (canShareFiles) {
       downloadLink.textContent = "Save to Photos / Share";
@@ -200,7 +209,7 @@ processBtn.addEventListener("click", async () => {
     // Create downloadable file
     const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
     if (!blob) throw new Error("Could not export image.");
-    enableDownloadOrShare(blob, "permuted.png");
+    enableDownloadOrShare(blob, "encrypted.png");
   } catch (e) {
     setError(e?.message || String(e));
   }
