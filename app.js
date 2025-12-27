@@ -117,6 +117,19 @@ function enableDownloadOrShare(blob, filename = "permuted.png") {
   }
 }
 
+function scaledDims(w, h, maxDim = 1280) {
+  const maxSide = Math.max(w, h);
+  if (maxSide <= maxDim) return { w, h, scaled: false };
+
+  const scale = maxDim / maxSide;
+
+  // Use floor so we never exceed maxDim due to rounding.
+  const newW = Math.max(1, Math.floor(w * scale));
+  const newH = Math.max(1, Math.floor(h * scale));
+
+  return { w: newW, h: newH, scaled: true };
+}
+
 function setError(msg) {
   errorEl.textContent = msg || "";
 }
@@ -188,11 +201,19 @@ processBtn.addEventListener("click", async () => {
   try {
     const bmp = await fileToImageBitmap(loadedFile);
 
-    outCanvas.width = bmp.width;
-    outCanvas.height = bmp.height;
-
+    const { w, h } = scaledDims(bmp.width, bmp.height, 1280);
+    
+    outCanvas.width = w;
+    outCanvas.height = h;
+    
     const ctx = outCanvas.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(bmp, 0, 0);
+    
+    // Optional, but improves downscale quality in most browsers
+    ctx.imageSmoothingEnabled = true;
+    try { ctx.imageSmoothingQuality = "high"; } catch {}
+    
+    // Draw scaled (or unchanged if already small enough)
+    ctx.drawImage(bmp, 0, 0, w, h);
 
     const imgData = ctx.getImageData(0, 0, outCanvas.width, outCanvas.height);
     const data = imgData.data; // Uint8ClampedArray: [R,G,B,A,...]
