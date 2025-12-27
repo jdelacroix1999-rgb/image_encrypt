@@ -49,6 +49,65 @@ const errorEl = document.getElementById("error");
 let loadedFile = null;
 let lastDownloadUrl = null;
 
+function isMobileDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function enableDownloadOrShare(blob, filename = "permuted.png") {
+  // Revoke any previous URL
+  if (lastDownloadUrl) {
+    URL.revokeObjectURL(lastDownloadUrl);
+    lastDownloadUrl = null;
+  }
+
+  const url = URL.createObjectURL(blob);
+  lastDownloadUrl = url;
+
+  setDownloadDisabled(false);
+
+  // Desktop: normal download
+  downloadLink.textContent = "Download result";
+  downloadLink.onclick = null;
+  downloadLink.href = url;
+  downloadLink.download = filename;
+
+  // Mobile: try Share Sheet so user can choose "Save Image"/"Save to Photos"
+  if (isMobileDevice()) {
+    const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+    const canShareFiles =
+      typeof navigator.share === "function" &&
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [file] });
+
+    if (canShareFiles) {
+      downloadLink.textContent = "Save to Photos / Share";
+      downloadLink.removeAttribute("download"); // don’t force downloads folder
+      downloadLink.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Encrypted image",
+            text: "Save this image to Photos",
+          });
+        } catch {
+          // user canceled share sheet -> do nothing
+        }
+      };
+      return;
+    }
+
+    // Fallback: open image in a new tab so user can long-press/share to save
+    downloadLink.textContent = "Open image to save";
+    downloadLink.removeAttribute("download");
+    downloadLink.onclick = (e) => {
+      e.preventDefault();
+      window.open(url, "_blank");
+    };
+  }
+}
+
 function setError(msg) {
   errorEl.textContent = msg || "";
 }
@@ -141,11 +200,7 @@ processBtn.addEventListener("click", async () => {
     // Create downloadable file
     const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
     if (!blob) throw new Error("Could not export image.");
-
-    lastDownloadUrl = URL.createObjectURL(blob);
-    downloadLink.href = lastDownloadUrl;
-    downloadLink.download = "encrypted.png";
-    setDownloadDisabled(false);
+    enableDownloadOrShare(blob, "permuted.png");
   } catch (e) {
     setError(e?.message || String(e));
   }
