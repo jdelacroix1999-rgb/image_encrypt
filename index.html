@@ -22,10 +22,16 @@
 </head>
 <body>
   <h1>Image Encrypter</h1>
-  <p class="hint">
-    Upload an image, and then click "Encrypt" to have it safely encrypted to protect your identity.
-    Everything runs in your browser and there is no AI involved.
-  </p>
+  <div class="panel" style="margin-bottom:16px;">
+    <h2>How does it work?</h2>
+    <p class="hint">
+      The pixels are "destroyed" so that no human or AI can ever reconstruct the image again. AI can tell only if there is a certain object in the picture (for example, a ball, a dog, a face, etc.), but it cannot rebuild the encrypted image, keeping your identity safe.
+    </p>
+    <p class="hint">
+      Upload an image, and then click "Encrypt" to have it safely encrypted to protect your identity.
+      Everything runs in your browser and there is no AI involved.
+    </p>
+  </div>
 
   <div class="panel">
     <div class="controls">
@@ -38,10 +44,6 @@
   </div>
 
   <div class="row" style="margin-top:16px;">
-    <div class="panel">
-      <h3>Original</h3>
-      <img id="originalPreview" alt="Original preview" />
-    </div>
     <div class="panel">
       <h3>Result</h3>
       <canvas id="outCanvas"></canvas>
