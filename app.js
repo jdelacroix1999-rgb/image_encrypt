@@ -42,7 +42,6 @@ const PERM = makePermutation(PERM_SEED);
 const fileInput = document.getElementById("fileInput");
 const processBtn = document.getElementById("processBtn");
 const downloadLink = document.getElementById("downloadLink");
-const originalPreview = document.getElementById("originalPreview");
 const outCanvas = document.getElementById("outCanvas");
 const permInfo = document.getElementById("permInfo");
 const errorEl = document.getElementById("error");
@@ -72,7 +71,6 @@ fileInput.addEventListener("change", () => {
   const f = fileInput.files && fileInput.files[0];
   if (!f) {
     loadedFile = null;
-    originalPreview.removeAttribute("src");
     return;
   }
   if (!f.type.startsWith("image/")) {
@@ -82,8 +80,6 @@ fileInput.addEventListener("change", () => {
   }
 
   loadedFile = f;
-  const url = URL.createObjectURL(f);
-  originalPreview.src = url;
   processBtn.disabled = false;
 });
 
