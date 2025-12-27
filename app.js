@@ -228,9 +228,12 @@ processBtn.addEventListener("click", async () => {
     ctx.putImageData(imgData, 0, 0);
 
     // Create downloadable file
-    const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
+    const blob = await new Promise((resolve) =>
+      outCanvas.toBlob(resolve, "image/jpeg", 0.92) // quality: 0..1
+    );
+
     if (!blob) throw new Error("Could not export image.");
-    enableDownloadOrShare(blob, "encrypted.png");
+    enableDownloadOrShare(blob, "encrypted.jpg");
   } catch (e) {
     setError(e?.message || String(e));
   }
