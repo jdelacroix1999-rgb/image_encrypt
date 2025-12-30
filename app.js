@@ -227,6 +227,20 @@ processBtn.addEventListener("click", async () => {
 
     ctx.putImageData(imgData, 0, 0);
 
+    // --- Flip vertically (upside down) AFTER permuting ---
+    const tmp = document.createElement("canvas");
+    tmp.width = outCanvas.width;
+    tmp.height = outCanvas.height;
+    
+    const tctx = tmp.getContext("2d");
+    tctx.drawImage(outCanvas, 0, 0); // snapshot current (already-permuted) result
+    
+    ctx.save();
+    ctx.setTransform(1, 0, 0, -1, 0, outCanvas.height); // flip Y
+    ctx.clearRect(0, 0, outCanvas.width, outCanvas.height);
+    ctx.drawImage(tmp, 0, 0);
+    ctx.restore();
+
     // Create downloadable file
     const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
 
