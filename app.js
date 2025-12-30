@@ -117,7 +117,7 @@ function enableDownloadOrShare(blob, filename = "permuted.png") {
   }
 }
 
-function scaledDims(w, h, maxDim = 360) {
+function scaledDims(w, h, maxDim = 1080) {
   const maxSide = Math.max(w, h);
   if (maxSide <= maxDim) return { w, h, scaled: false };
 
@@ -201,7 +201,7 @@ processBtn.addEventListener("click", async () => {
   try {
     const bmp = await fileToImageBitmap(loadedFile);
 
-    const { w, h } = scaledDims(bmp.width, bmp.height, 360);
+    const { w, h } = scaledDims(bmp.width, bmp.height, 1080);
     
     outCanvas.width = w;
     outCanvas.height = h;
