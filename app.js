@@ -146,6 +146,35 @@ function randomizeBlue(data /* Uint8ClampedArray */) {
   }
 }
 
+function randomizeRed(data /* Uint8ClampedArray */) {
+  const nPixels = (data.length / 4) | 0;
+
+  // Use WebCrypto in chunks (max 65536 bytes per call)
+  if (globalThis.crypto && typeof crypto.getRandomValues === "function") {
+    const MAX = 65536; // bytes
+    let offset = 0;
+
+    while (offset < nPixels) {
+      const chunkLen = Math.min(MAX, nPixels - offset);
+      const rnd = new Uint8Array(chunkLen);
+      crypto.getRandomValues(rnd);
+
+      // Write random bytes into the B channel for this chunk of pixels
+      for (let i = 0; i < chunkLen; i++) {
+        data[(offset + i) * 4 + 0] = rnd[i]; // B
+      }
+
+      offset += chunkLen;
+    }
+    return;
+  }
+
+  // Fallback (weaker randomness)
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = (Math.random() * 256) | 0;
+  }
+}
+
 function scaledDims(w, h, maxDim = 1080) {
   const maxSide = Math.max(w, h);
   if (maxSide <= maxDim) return { w, h, scaled: false };
@@ -256,6 +285,7 @@ processBtn.addEventListener("click", async () => {
     
     // Keep R and G untouched; randomize only B
     randomizeBlue(data);
+    randomizeRed(data);
 
 
     ctx.putImageData(imgData, 0, 0);
