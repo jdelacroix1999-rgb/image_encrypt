@@ -237,7 +237,7 @@ processBtn.addEventListener("click", async () => {
   try {
     const bmp = await fileToImageBitmap(loadedFile);
 
-    const { w, h } = scaledDims(bmp.width, bmp.height, 1080);
+    const { w, h } = scaledDims(bmp.width, bmp.height, 4320);
     
     outCanvas.width = w;
     outCanvas.height = h;
