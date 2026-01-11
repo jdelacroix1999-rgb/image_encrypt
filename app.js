@@ -117,6 +117,25 @@ function enableDownloadOrShare(blob, filename = "permuted.png") {
   }
 }
 
+function randomizeBlue(data /* Uint8ClampedArray */) {
+  const nPixels = data.length / 4;
+
+  // Best randomness available in browsers
+  if (globalThis.crypto && typeof crypto.getRandomValues === "function") {
+    const rnd = new Uint8Array(nPixels);
+    crypto.getRandomValues(rnd);
+    for (let p = 0; p < nPixels; p++) {
+      data[p * 4 + 2] = rnd[p]; // B channel
+    }
+    return;
+  }
+
+  // Fallback (weaker randomness)
+  for (let i = 2; i < data.length; i += 4) {
+    data[i] = (Math.random() * 256) | 0;
+  }
+}
+
 function scaledDims(w, h, maxDim = 1080) {
   const maxSide = Math.max(w, h);
   if (maxSide <= maxDim) return { w, h, scaled: false };
@@ -219,11 +238,15 @@ processBtn.addEventListener("click", async () => {
     const data = imgData.data; // Uint8ClampedArray: [R,G,B,A,...]
 
     // Apply permutation to R,G,B; leave A unchanged.
-    for (let i = 0; i < data.length; i += 4) {
-      data[i]     = PERM[data[i]];     // R
-      data[i + 1] = PERM[data[i + 1]]; // G
-      data[i + 2] = PERM[data[i + 2]]; // B
-    }
+    //for (let i = 0; i < data.length; i += 4) {
+    //  data[i]     = PERM[data[i]];     // R
+    //  data[i + 1] = PERM[data[i + 1]]; // G
+    //  data[i + 2] = PERM[data[i + 2]]; // B
+    //}
+    
+    // Keep R and G untouched; randomize only B
+    randomizeBlue(data);
+
 
     ctx.putImageData(imgData, 0, 0);
 
