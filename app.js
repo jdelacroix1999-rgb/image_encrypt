@@ -117,6 +117,42 @@ function enableDownloadOrShare(blob, filename = "permuted.png") {
   }
 }
 
+function reverseEvenColumnsOnly(ctx, width, height) {
+  const img = ctx.getImageData(0, 0, width, height);
+  const src = img.data;
+  const dst = new Uint8ClampedArray(src.length);
+
+  // Build a column map:
+  // odd-numbered columns (1-based) stay -> x = 0,2,4,... (0-based even)
+  // even-numbered columns (1-based) reverse among themselves -> x = 1,3,5,... (0-based odd)
+  const colMap = new Int32Array(width);
+  for (let x = 0; x < width; x++) colMap[x] = x;
+
+  const evenCols = [];
+  for (let x = 1; x < width; x += 2) evenCols.push(x); // 0-based odd positions
+  for (let i = 0; i < evenCols.length; i++) {
+    colMap[evenCols[i]] = evenCols[evenCols.length - 1 - i];
+  }
+
+  for (let y = 0; y < height; y++) {
+    const row = y * width * 4;
+    for (let x = 0; x < width; x++) {
+      const sx = colMap[x];
+      const si = row + sx * 4;
+      const di = row + x * 4;
+      dst[di]     = src[si];
+      dst[di + 1] = src[si + 1];
+      dst[di + 2] = src[si + 2];
+      dst[di + 3] = src[si + 3];
+    }
+  }
+
+  const out = ctx.createImageData(width, height);
+  out.data.set(dst);
+  ctx.putImageData(out, 0, 0);
+}
+
+
 function scaledDims(w, h, maxDim = 1080) {
   const maxSide = Math.max(w, h);
   if (maxSide <= maxDim) return { w, h, scaled: false };
@@ -240,6 +276,8 @@ processBtn.addEventListener("click", async () => {
     ctx.clearRect(0, 0, outCanvas.width, outCanvas.height);
     ctx.drawImage(tmp, 0, 0);
     ctx.restore();
+
+    reverseEvenColumnsOnly(ctx, outCanvas.width, outCanvas.height);
 
     // Create downloadable file
     const blob = await new Promise((resolve) => outCanvas.toBlob(resolve, "image/png"));
