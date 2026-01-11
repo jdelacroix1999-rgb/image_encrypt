@@ -118,14 +118,24 @@ function enableDownloadOrShare(blob, filename = "permuted.png") {
 }
 
 function randomizeBlue(data /* Uint8ClampedArray */) {
-  const nPixels = data.length / 4;
+  const nPixels = (data.length / 4) | 0;
 
-  // Best randomness available in browsers
+  // Use WebCrypto in chunks (max 65536 bytes per call)
   if (globalThis.crypto && typeof crypto.getRandomValues === "function") {
-    const rnd = new Uint8Array(nPixels);
-    crypto.getRandomValues(rnd);
-    for (let p = 0; p < nPixels; p++) {
-      data[p * 4 + 2] = rnd[p]; // B channel
+    const MAX = 65536; // bytes
+    let offset = 0;
+
+    while (offset < nPixels) {
+      const chunkLen = Math.min(MAX, nPixels - offset);
+      const rnd = new Uint8Array(chunkLen);
+      crypto.getRandomValues(rnd);
+
+      // Write random bytes into the B channel for this chunk of pixels
+      for (let i = 0; i < chunkLen; i++) {
+        data[(offset + i) * 4 + 2] = rnd[i]; // B
+      }
+
+      offset += chunkLen;
     }
     return;
   }
