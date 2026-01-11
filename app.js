@@ -153,7 +153,7 @@ function reverseEvenColumnsOnly(ctx, width, height) {
 }
 
 
-function scaledDims(w, h, maxDim = 1080) {
+function scaledDims(w, h, maxDim = 4320) {
   const maxSide = Math.max(w, h);
   if (maxSide <= maxDim) return { w, h, scaled: false };
 
